@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
 import fastapi
+from fastapi import HTTPException
 from fastapi.params import Query 
 from src.posts.models import User
 from src.auth.service import Auth
@@ -11,7 +11,14 @@ router = fastapi.APIRouter(prefix="/posts", tags=["posts"])
 
 auth_service = Auth()
 
+
 @router.get("/getPosts")
+async def get_posts(db = fastapi.Depends(get_db), current_user: User = fastapi.Depends(auth_service.get_current_user)):
+    posts = db.query(models.PostModel).filter(models.PostModel.user_id == current_user.id).all()
+    
+    
+    return posts
+@router.get("/getPost")
 async def get_post(
     id: int = None,
     name: str = None,
@@ -30,18 +37,16 @@ async def get_post(
     
     post = query.first()
     if not post:
-        return {"error": "Contact not found"}
+        return {"error": "Post not found"}
 
     return post
 
-@router.get("/")
-async def get_posts(db = fastapi.Depends(get_db), current_user: User = fastapi.Depends(auth_service.get_current_user)):
-    posts = db.query(models.PostModel).filter(models.PostModel.user_id == current_user.id).all()
-    
-    return posts
+
 
 @router.post("/")
 async def addPost(post: schemas.PostRequestSchema, db = fastapi.Depends(get_db), current_user: User = fastapi.Depends(auth_service.get_current_user)):
+    if len(post.text) > 1000:
+        raise HTTPException(status_code=400, detail="Text field is too long")
     new_post = models.PostModel(
         name=post.name,
         text=post.text,
