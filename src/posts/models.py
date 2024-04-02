@@ -26,3 +26,21 @@ class PostModel(Base):
     user_id = sa.Column(sa.Integer, sa.ForeignKey("users.id"), nullable=True)
     user = orm.relationship("User", backref="posts", lazy="joined")
     
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "text": self.text,
+            "created_at": str(self.created_at),
+            "updated_at": str(self.updated_at),
+            "user_id": self.user_id
+        }
+    
+class CachedData(Base):
+    __tablename__ = "cached_data"
+    
+    id = sa.Column(sa.Integer, primary_key=True)
+    query_id = sa.Column(sa.String)
+    query_result = sa.Column(sa.String)
+    expiration_time = sa.Column(sa.DateTime)
+    
